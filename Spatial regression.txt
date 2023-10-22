@@ -1,0 +1,58 @@
+##Our working directory
+
+setwd("D:/STATISTICS/STATsolutions/STAT 52/Thesis")
+
+# Load the packages
+library(readxl)
+library(corrplot)
+library(sp)
+library(sf)
+library(spData)
+library(spdep)
+library(spatialreg)
+library(lmtest)
+
+#Upload data
+data<-read_excel("Model.data.AHC.xlsx",sheet="spatial")
+
+#correlation matrix & plot
+cor1<-cor(data[c(12,5:11)])
+cor2<-cor(data[c(13,5:11)])
+cor3<-cor(data[c(14,5:11)])
+cor4<-cor(data[c(15,5:11)])
+cor5<-cor(data[c(16,5:11)])
+cor6<-cor(data[c(17,5:11)])
+cor1a<-cor(data[c(18,5:11)])
+
+corrplot(cor1a,method = "color",type="upper")
+
+# Our dataset is data
+coordinates(data) <- c("Longitude", "Latitude")
+proj4string(data) <- CRS("+proj=longlat +datum=WGS84")
+
+# Queen contiguity
+w <- dnearneigh(data, d1 = 0, d2 =0)  # Adjust the distance threshold (d2) as needed
+w <- nb2listw(w)
+
+model1 <- errorsarlm(y1~x1+x2+x3+x4+x5+x6+x7, data = data, listw = w)#d2=0
+coeftest(model1)
+summary(model1)
+
+model2 <- errorsarlm(y2~x2+x3+x4+x5, data = data, listw = w)
+coeftest(model2)
+
+model3 <- errorsarlm(y3~x1+x2, data = data, listw = w)#d2=0
+coeftest(model3)
+
+airborne<-errorsarlm(y7~x1+x4+x5, data = data, listw = w)#d2=50
+coeftest(airborne)
+
+
+# Calculate residuals
+residuals <- residuals(model1)
+
+# Calculate Moran's I for the residuals
+moran_result <- moran.test(residuals, listw = w)
+
+# Print Moran's I value and associated statistics
+print(moran_result)
